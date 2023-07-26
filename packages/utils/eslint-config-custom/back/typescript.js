@@ -3,7 +3,7 @@ const path = require('path');
 module.exports = {
   root: true,
   extends: [
-    '@strapi/eslint-config/typescript' /*'plugin:@typescript-eslint/recommended-requiring-type-checking'*/,
+    '@strapi/eslint-config/back/typescript' /*'plugin:@typescript-eslint/recommended-requiring-type-checking'*/,
   ],
   parser: '@typescript-eslint/parser',
   plugins: ['@typescript-eslint'],
