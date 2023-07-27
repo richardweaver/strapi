@@ -1,14 +1,31 @@
 import React from 'react';
 
-import { Select, Option, Box } from '@strapi/design-system';
+import { Box, Flex, Checkbox } from '@strapi/design-system';
 import { useTracking } from '@strapi/helper-plugin';
 import PropTypes from 'prop-types';
 import { useIntl } from 'react-intl';
 import { useDispatch, useSelector } from 'react-redux';
+import styled, { css } from 'styled-components';
 
-import { getTrad, checkIfAttributeIsDisplayable } from '../../../../utils';
+import { checkIfAttributeIsDisplayable } from '../../../../utils';
 import { onChangeListHeaders } from '../../actions';
 import { selectDisplayedHeaders } from '../../selectors';
+
+const activeCheckboxWrapperStyles = css`
+  background: ${(props) => props.theme.colors.primary100};
+  svg {
+    opacity: 1;
+  }
+  border-radius: ${({ theme }) => theme.borderRadius};
+`;
+
+const CheckboxWrapper = styled(Box)`
+  /* Show active style both on hover and when the action is selected */
+  ${(props) => props.isActive && activeCheckboxWrapperStyles}
+  &:hover {
+    ${activeCheckboxWrapperStyles}
+  }
+`;
 
 export const FieldPicker = ({ layout }) => {
   const dispatch = useDispatch();
@@ -27,55 +44,40 @@ export const FieldPicker = ({ layout }) => {
 
   const values = displayedHeaders.map(({ name }) => name);
 
-  const handleChange = (updatedValues) => {
+  const isSelected = (headerName) => values.includes(headerName);
+
+  const handleChange = (headerName) => {
     trackUsage('didChangeDisplayedFields');
 
-    // removing a header
-    if (updatedValues.length < values.length) {
-      const removedHeader = values.filter((value) => {
-        return updatedValues.indexOf(value) === -1;
-      });
-
-      dispatch(onChangeListHeaders({ name: removedHeader[0], value: true }));
+    // remove a header
+    if (values.includes(headerName)) {
+      dispatch(onChangeListHeaders({ name: headerName, value: true }));
     } else {
-      const addedHeader = updatedValues.filter((value) => {
-        return values.indexOf(value) === -1;
-      });
-
-      dispatch(onChangeListHeaders({ name: addedHeader[0], value: false }));
+      dispatch(onChangeListHeaders({ name: headerName, value: false }));
     }
   };
 
   return (
-    <Box paddingTop={1} paddingBottom={1}>
-      <Select
-        aria-label="change displayed fields"
-        value={values}
-        onChange={handleChange}
-        customizeContent={(values) =>
-          formatMessage(
-            {
-              id: getTrad('select.currently.selected'),
-              defaultMessage: '{count} currently selected',
-            },
-            { count: values.length }
-          )
-        }
-        multi
-        size="S"
-      >
-        {allAllowedHeaders.map((header) => {
-          return (
-            <Option key={header.name} value={header.name}>
-              {formatMessage({
-                id: header.intlLabel.id || header.name,
-                defaultMessage: header.intlLabel.defaultMessage || header.name,
-              })}
-            </Option>
-          );
-        })}
-      </Select>
-    </Box>
+    <Flex width="100%" direction="column" alignItems="start">
+      {allAllowedHeaders.map((header) => (
+        <CheckboxWrapper
+          padding={2}
+          width="100%"
+          key={header.name}
+          isActive={isSelected(header.name)}
+        >
+          <Checkbox
+            onChange={() => handleChange(header.name)}
+            value={isSelected(header.name) && header.name}
+          >
+            {formatMessage({
+              id: header.intlLabel.id || header.name,
+              defaultMessage: header.intlLabel.defaultMessage || header.name,
+            })}
+          </Checkbox>
+        </CheckboxWrapper>
+      ))}
+    </Flex>
   );
 };
 
