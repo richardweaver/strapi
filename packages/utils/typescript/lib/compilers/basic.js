@@ -5,6 +5,7 @@ const { merge } = require('lodash');
 
 const reportDiagnostics = require('../utils/report-diagnostics');
 const resolveConfigOptions = require('../utils/resolve-config-options');
+const { glob } = require('glob');
 
 module.exports = {
   /**
@@ -14,12 +15,16 @@ module.exports = {
    * @param {Array.<string>} configOptions.fileNames
    * @param {Object} configOptions.options
    */
-  run(tsConfigPath, configOptions = {}) {
+  async run(tsConfigPath, configOptions = {}) {
     // Parse the tsconfig.json file & resolve the configuration options
-    const { fileNames, options, projectReferences } = resolveConfigOptions(tsConfigPath);
+    const { options, projectReferences } = resolveConfigOptions(tsConfigPath);
+
+    const files = await new Promise((resolve, reject) => {
+      glob('./**/*.test-d.ts', (err, matches) => (err ? reject(err) : resolve(matches)));
+    });
 
     const program = ts.createProgram({
-      rootNames: configOptions.fileNames ? configOptions.fileNames : fileNames,
+      rootNames: files,
       projectReferences,
       options: merge(options, configOptions.options),
     });
@@ -31,7 +36,27 @@ module.exports = {
     );
 
     if (diagnostics.length > 0) {
-      reportDiagnostics(diagnostics);
+      const ds = diagnostics.map((diagnostic) => {
+        const comment = diagnostic.file?.commentDirectives.find(
+          (comment) =>
+            comment.range.pos === diagnostic.start &&
+            comment.range.end === diagnostic.start + diagnostic.length
+        );
+
+        if (comment) {
+          const text = diagnostic.file.text.slice(comment.range.pos, comment.range.end);
+
+          if (text.startsWith('// @ts-expect-error')) {
+            const [, message] = text.split('// @ts-expect-error');
+            console.log('message?', message);
+            diagnostic.messageText = message;
+          }
+        }
+
+        return diagnostic;
+      });
+
+      reportDiagnostics(ds);
     }
 
     // If the compilation failed, exit early
