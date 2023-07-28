@@ -1,5 +1,3 @@
-import React from 'react';
-
 import { Flex, Icon } from '@strapi/design-system';
 import { Paint } from '@strapi/icons';
 import styled from 'styled-components';

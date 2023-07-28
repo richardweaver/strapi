@@ -12,7 +12,6 @@
     "@strapi/design-system": "1.8.2",
     "@strapi/helper-plugin": "4.11.7",
     "@strapi/icons": "1.8.2",
-    "prop-types": "^15.8.1",
     "react-colorful": "5.6.1",
     "react-intl": "6.4.1"
   },
@@ -43,6 +42,7 @@
     "watch": "run -T tsc -w --preserveWatchOutput",
     "clean": "run -T rimraf ./dist",
     "prepublishOnly": "yarn clean && yarn build",
+    "test:ts:front": "run -T tsc --noEmit --project ./admin/tsconfig.json",
     "test:front": "run -T cross-env IS_EE=true jest --config ./jest.config.front.js",
     "test:front:watch": "run -T cross-env IS_EE=true jest --config ./jest.config.front.js --watchAll",
     "test:front:ce": "run -T cross-env IS_EE=false jest --config ./jest.config.front.js",
