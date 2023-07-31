@@ -225,19 +225,19 @@ function ListView({
         await import(
           '../../../../../ee/admin/content-manager/components/Filter/CustomInputs/ReviewWorkflows/constants'
         )
-      ).REVIEW_WORKFLOW_STAGE_FILTER,
+      ).REVIEW_WORKFLOW_FILTERS,
     {
-      combine(ceFilters, eeFilter) {
+      combine(ceFilters, eeFilters) {
         return [
           ...ceFilters,
-          {
+          ...eeFilters.map((eeFilter) => ({
             ...eeFilter,
             metadatas: {
               ...eeFilter.metadatas,
+              ...(eeFilter.name === 'strapi_stage' ? { uid: contentType.uid } : {}),
               label: formatMessage(eeFilter.metadatas.label),
-              uid: contentType.uid,
             },
-          },
+          })),
         ];
       },
 
