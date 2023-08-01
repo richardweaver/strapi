@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useReducer, useState } from 'react';
+import React, { useCallback, useReducer, useState } from 'react';
 
 import {
   ActionLayout,
@@ -21,6 +21,7 @@ import {
   LoadingIndicatorPage,
   SearchURLQuery,
   SettingsPageTitle,
+  useAPIErrorHandler,
   useCollator,
   useFilter,
   useFocusWhenNavigate,
@@ -29,12 +30,11 @@ import {
   useRBAC,
 } from '@strapi/helper-plugin';
 import { Duplicate, Pencil, Plus, Trash } from '@strapi/icons';
-import get from 'lodash/get';
 import { useIntl } from 'react-intl';
 import { useSelector } from 'react-redux';
 import { useHistory } from 'react-router-dom';
 
-import { useRolesList } from '../../../../../hooks';
+import { useAdminRoles } from '../../../../../hooks/useAdminRoles';
 import { selectAdminPermissions } from '../../../../App/selectors';
 
 import EmptyRole from './components/EmptyRole';
@@ -45,12 +45,23 @@ const useSortedRoles = () => {
   useFocusWhenNavigate();
   const { locale } = useIntl();
   const permissions = useSelector(selectAdminPermissions);
+  const toggleNotification = useNotification();
+  const { formatAPIError } = useAPIErrorHandler();
   const {
     isLoading: isLoadingForPermissions,
     allowedActions: { canCreate, canDelete, canRead, canUpdate },
   } = useRBAC(permissions.settings.roles);
 
-  const { getData, roles, isLoading } = useRolesList(false);
+  const {
+    roles,
+    error: errorRoles,
+    isError: isErrorRoles,
+    isLoading,
+    refetch,
+  } = useAdminRoles(undefined, {
+    cacheTime: 0,
+    enabled: !isLoadingForPermissions && canRead,
+  });
   const [{ query }] = useQueryParams();
   const _q = query?._q || '';
 
@@ -65,17 +76,21 @@ const useSortedRoles = () => {
     sensitivity: 'base',
   });
 
-  const sortedRoles = (roles || [])
+  const sortedRoles = roles
     .filter((role) => includes(role.name, _q) || includes(role.description, _q))
     .sort(
       (a, b) => formatter.compare(a.name, b.name) || formatter.compare(a.description, b.description)
     );
 
-  useEffect(() => {
-    if (!isLoadingForPermissions && canRead) {
-      getData();
+  React.useEffect(() => {
+    // TODO: it is probably better to rely on the status code instead
+    if (isErrorRoles && errorRoles.response.payload.message === 'Forbidden') {
+      toggleNotification({
+        type: 'warning',
+        message: formatAPIError(errorRoles),
+      });
     }
-  }, [isLoadingForPermissions, canRead, getData]);
+  }, [errorRoles, formatAPIError, isErrorRoles, toggleNotification]);
 
   return {
     isLoadingForPermissions,
@@ -84,14 +99,14 @@ const useSortedRoles = () => {
     canRead,
     canUpdate,
     isLoading,
-    getData,
+    refetchRoles: refetch,
     sortedRoles,
-    roles,
   };
 };
 
-const useRoleActions = ({ getData, canCreate, canDelete, canUpdate }) => {
+const useRoleActions = ({ canCreate, canDelete, canUpdate, refetchRoles }) => {
   const { formatMessage } = useIntl();
+  const { formatAPIError } = useAPIErrorHandler();
 
   const toggleNotification = useNotification();
   const [isWarningDeleteAllOpened, setIsWarningDeleteAllOpenend] = useState(false);
@@ -113,26 +128,16 @@ const useRoleActions = ({ getData, canCreate, canDelete, canUpdate }) => {
         ids: [roleToDelete],
       });
 
-      await getData();
+      await refetchRoles();
 
       dispatch({
         type: 'RESET_DATA_TO_DELETE',
       });
-    } catch (err) {
-      const errorIds = get(err, ['response', 'payload', 'data', 'ids'], null);
-
-      if (errorIds && Array.isArray(errorIds)) {
-        const errorsMsg = errorIds.join('\n');
-        toggleNotification({
-          type: 'warning',
-          message: errorsMsg,
-        });
-      } else {
-        toggleNotification({
-          type: 'warning',
-          message: { id: 'notification.error' },
-        });
-      }
+    } catch (error) {
+      toggleNotification({
+        type: 'warning',
+        message: formatAPIError(error),
+      });
     }
     handleToggleModal();
   };
@@ -252,7 +257,7 @@ const RoleListPage = () => {
     canDelete,
     canUpdate,
     isLoading,
-    getData,
+    refetchRoles,
     sortedRoles,
   } = useSortedRoles();
 
@@ -263,7 +268,7 @@ const RoleListPage = () => {
     showModalConfirmButtonLoading,
     handleToggleModal,
     handleDeleteData,
-  } = useRoleActions({ getData, canCreate, canDelete, canUpdate });
+  } = useRoleActions({ refetchRoles, canCreate, canDelete, canUpdate });
 
   // ! TODO - Show the search bar only if the user is allowed to read - add the search input
   // canRead

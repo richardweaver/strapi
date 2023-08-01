@@ -1,4 +1,4 @@
-import React from 'react';
+import * as React from 'react';
 
 import {
   Button,
@@ -20,7 +20,9 @@ import {
   CheckPagePermissions,
   LoadingIndicatorPage,
   SettingsPageTitle,
+  useAPIErrorHandler,
   useFocusWhenNavigate,
+  useNotification,
   useRBAC,
 } from '@strapi/helper-plugin';
 import { Check } from '@strapi/icons';
@@ -28,7 +30,8 @@ import isEqual from 'lodash/isEqual';
 import { useIntl } from 'react-intl';
 import { useSelector } from 'react-redux';
 
-import { useRolesList, useSettingsForm } from '../../../../../../admin/src/hooks';
+import { useSettingsForm } from '../../../../../../admin/src/hooks';
+import { useAdminRoles } from '../../../../../../admin/src/hooks/useAdminRoles';
 import { selectAdminPermissions } from '../../../../../../admin/src/pages/App/selectors';
 
 import schema from './utils/schema';
@@ -36,6 +39,8 @@ import schema from './utils/schema';
 export const SingleSignOn = () => {
   const { formatMessage } = useIntl();
   const permissions = useSelector(selectAdminPermissions);
+  const toggleNotification = useNotification();
+  const { formatAPIError } = useAPIErrorHandler();
 
   const {
     isLoading: isLoadingForPermissions,
@@ -55,7 +60,14 @@ export const SingleSignOn = () => {
     'defaultRole',
     'ssoLockedRoles',
   ]);
-  const { roles } = useRolesList(canReadRoles);
+
+  const {
+    error: errorRoles,
+    isError: isErrorRoles,
+    roles,
+  } = useAdminRoles(undefined, {
+    enabled: canReadRoles,
+  });
 
   useFocusWhenNavigate();
 
@@ -64,6 +76,16 @@ export const SingleSignOn = () => {
   // TODO: focus() first error field, but it looks like that requires refactoring from useSettingsForm to Formik
 
   const isHeaderButtonDisabled = isEqual(initialData, modifiedData);
+
+  React.useEffect(() => {
+    // TODO: it is probably better to rely on the status code instead
+    if (isErrorRoles && errorRoles.response.payload.message === 'Forbidden') {
+      toggleNotification({
+        type: 'warning',
+        message: formatAPIError(errorRoles),
+      });
+    }
+  }, [errorRoles, formatAPIError, isErrorRoles, toggleNotification]);
 
   return (
     <Layout>

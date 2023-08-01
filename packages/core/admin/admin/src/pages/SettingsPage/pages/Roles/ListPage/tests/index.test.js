@@ -18,7 +18,7 @@ import { createStore } from 'redux';
 
 import Theme from '../../../../../../components/Theme';
 import ThemeToggleProvider from '../../../../../../components/ThemeToggleProvider';
-import { useRolesList } from '../../../../../../hooks';
+import { useAdminRoles } from '../../../../../../hooks/useAdminRoles';
 import ListPage from '../index';
 
 jest.mock('@strapi/helper-plugin', () => ({
@@ -30,10 +30,7 @@ jest.mock('@strapi/helper-plugin', () => ({
   })),
 }));
 
-jest.mock('../../../../../../hooks', () => ({
-  ...jest.requireActual('../../../../../../hooks'),
-  useRolesList: jest.fn(),
-}));
+jest.mock('../../../../../../hooks/useAdminRoles');
 
 const setup = (props) =>
   render(<ListPage {...props} />, {
@@ -62,10 +59,9 @@ const setup = (props) =>
 
 describe('<ListPage />', () => {
   it('renders and matches the snapshot', () => {
-    useRolesList.mockImplementationOnce(() => ({
+    useAdminRoles.mockImplementationOnce(() => ({
       roles: [],
       isLoading: true,
-      getData: jest.fn(),
     }));
 
     const { getByText } = setup();
@@ -74,7 +70,7 @@ describe('<ListPage />', () => {
   });
 
   it('should show a list of roles', () => {
-    useRolesList.mockImplementationOnce(() => ({
+    useAdminRoles.mockImplementationOnce(() => ({
       roles: [
         {
           code: 'strapi-super-admin',
@@ -87,7 +83,6 @@ describe('<ListPage />', () => {
         },
       ],
       isLoading: false,
-      getData: jest.fn(),
     }));
 
     useRBAC.mockImplementationOnce(() => ({

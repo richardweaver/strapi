@@ -27,16 +27,16 @@ import {
 import { ArrowLeft } from '@strapi/icons';
 import { format } from 'date-fns';
 import { Formik } from 'formik';
-import get from 'lodash/get';
 import isEmpty from 'lodash/isEmpty';
 import { useIntl } from 'react-intl';
 import { useSelector } from 'react-redux';
 import { useHistory, useRouteMatch } from 'react-router-dom';
 import styled from 'styled-components';
 
-import { useFetchPermissionsLayout, useFetchRole } from '../../../../../hooks';
+import { useAdminRolePermissions } from '../../../../../hooks/useAdminRolePermissions';
 import { selectAdminPermissions } from '../../../../App/selectors';
 import Permissions from '../EditPage/components/Permissions';
+import { useAdminRolePermissionLayout } from '../hooks/useAdminRolePermissionLayout';
 
 import schema from './utils/schema';
 
@@ -51,6 +51,9 @@ const UsersRoleNumber = styled.div`
 `;
 
 const CreatePage = () => {
+  const {
+    params: { id },
+  } = useRouteMatch('/settings/roles/duplicate/:id');
   const toggleNotification = useNotification();
   const { lockApp, unlockApp } = useOverlayBlocker();
   const { formatMessage } = useIntl();
@@ -58,11 +61,21 @@ const CreatePage = () => {
   const { replace } = useHistory();
   const permissionsRef = useRef();
   const { trackUsage } = useTracking();
-  const params = useRouteMatch('/settings/roles/duplicate/:id');
-  const id = get(params, 'params.id', null);
-  const { isLoading: isLayoutLoading, data: permissionsLayout } = useFetchPermissionsLayout();
-  const { permissions: rolePermissions, isLoading: isRoleLoading } = useFetchRole(id);
   const { post, put } = useFetchClient();
+
+  const { isLoading: isLayoutLoading, data: permissionsLayout } = useAdminRolePermissionLayout(id, {
+    cacheTime: 0,
+  });
+
+  const { permissions: rolePermissions, isLoading: isRoleLoading } = useAdminRolePermissions(
+    { id },
+    {
+      cacheTime: 0,
+
+      // only fetch permissions if a role is cloned
+      enabled: !!id,
+    }
+  );
 
   const handleCreateRoleSubmit = (data) => {
     lockApp();
