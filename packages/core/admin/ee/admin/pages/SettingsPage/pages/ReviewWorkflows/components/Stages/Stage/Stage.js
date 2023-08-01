@@ -9,6 +9,9 @@ import {
   Grid,
   GridItem,
   IconButton,
+  MultiSelect,
+  MultiSelectGroup,
+  MultiSelectOption,
   SingleSelect,
   SingleSelectOption,
   TextInput,
@@ -21,12 +24,17 @@ import PropTypes from 'prop-types';
 import { getEmptyImage } from 'react-dnd-html5-backend';
 import { useIntl } from 'react-intl';
 import { useDispatch } from 'react-redux';
+import styled from 'styled-components';
 
 import { useDragAndDrop } from '../../../../../../../../../admin/src/content-manager/hooks';
 import { composeRefs } from '../../../../../../../../../admin/src/content-manager/utils';
 import { deleteStage, updateStage, updateStagePosition } from '../../../actions';
 import { DRAG_DROP_TYPES } from '../../../constants';
 import { getAvailableStageColors, getStageColorByHex } from '../../../utils/colors';
+
+const NestedOption = styled(MultiSelectOption)`
+  padding-left: ${({ theme }) => theme.spaces[7]};
+`;
 
 const AVAILABLE_COLORS = getAvailableStageColors();
 
@@ -144,6 +152,7 @@ export function Stage({
   const [isOpen, setIsOpen] = React.useState(isOpenDefault);
   const [nameField, nameMeta, nameHelper] = useField(`stages.${index}.name`);
   const [colorField, colorMeta, colorHelper] = useField(`stages.${index}.color`);
+  const [permissionsField, permissionsMeta] = useField(`stages.${index}.permissions`);
   const [{ handlerId, isDragging, handleKeyDown }, stageRef, dropRef, dragRef, dragPreviewRef] =
     useDragAndDrop(canReorder, {
       index,
@@ -314,6 +323,54 @@ export function Stage({
                     );
                   })}
                 </SingleSelect>
+              </GridItem>
+
+              <GridItem col={6}>
+                <MultiSelect
+                  {...permissionsField}
+                  customizeContent={(value) => value}
+                  disabled={!canUpdate}
+                  error={permissionsMeta.error ?? false}
+                  id={permissionsField.name}
+                  label={formatMessage({
+                    id: 'Settings.review-workflows.stage.permissions.label',
+                    defaultMessage: 'Roles that can change this stage',
+                  })}
+                  onChange={(values) => {
+                    permissionsMeta.setValue(values);
+                  }}
+                  placeholder={formatMessage({
+                    id: 'Settings.review-workflows.stage.permissions.placeholder',
+                    defaultMessage: 'Select a role',
+                  })}
+                  required
+                >
+                  {[].map((opt) => {
+                    if ('children' in opt) {
+                      return (
+                        <MultiSelectGroup
+                          key={opt.label}
+                          label={opt.label}
+                          values={opt.children.map((child) => child.value.toString())}
+                        >
+                          {opt.children.map((child) => {
+                            return (
+                              <NestedOption key={child.value} value={child.value}>
+                                {child.label}
+                              </NestedOption>
+                            );
+                          })}
+                        </MultiSelectGroup>
+                      );
+                    }
+
+                    return (
+                      <MultiSelectOption key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </MultiSelectOption>
+                    );
+                  })}
+                </MultiSelect>
               </GridItem>
             </Grid>
           </AccordionContent>
