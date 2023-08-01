@@ -51,7 +51,7 @@ import { getData, getDataSucceeded, onChangeListHeaders, onResetListHeaders } fr
 import { Body } from './components/Body';
 import BulkActionButtons from './components/BulkActionButtons';
 import CellContent from './components/CellContent';
-import { CogMenu } from './components/CogMenu';
+import { ViewSettingsMenu } from './components/ViewSettingsMenu';
 import makeSelectListView, { selectDisplayedHeaders } from './selectors';
 import { buildValidGetParams } from './utils';
 
@@ -468,7 +468,7 @@ function ListView({
           endActions={
             <>
               <InjectionZone area="contentManager.listView.actions" />
-              <CogMenu slug={slug} layout={layout} />
+              <ViewSettingsMenu slug={slug} layout={layout} />
             </>
           }
           startActions={

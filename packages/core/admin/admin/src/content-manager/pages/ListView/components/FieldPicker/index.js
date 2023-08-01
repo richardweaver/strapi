@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { Box, Flex, Checkbox } from '@strapi/design-system';
+import { Box, Flex, Checkbox, TextButton, Typography } from '@strapi/design-system';
 import { useTracking } from '@strapi/helper-plugin';
 import PropTypes from 'prop-types';
 import { useIntl } from 'react-intl';
@@ -8,7 +8,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import styled, { css } from 'styled-components';
 
 import { checkIfAttributeIsDisplayable } from '../../../../utils';
-import { onChangeListHeaders } from '../../actions';
+import { onChangeListHeaders, onResetListHeaders } from '../../actions';
 import { selectDisplayedHeaders } from '../../selectors';
 
 const activeCheckboxWrapperStyles = css`
@@ -52,32 +52,55 @@ export const FieldPicker = ({ layout }) => {
     // remove a header
     if (values.includes(headerName)) {
       dispatch(onChangeListHeaders({ name: headerName, value: true }));
+      // add a header
     } else {
       dispatch(onChangeListHeaders({ name: headerName, value: false }));
     }
   };
 
+  const handleReset = () => {
+    dispatch(onResetListHeaders());
+  };
+
   return (
-    <Flex width="100%" direction="column" alignItems="start">
-      {allAllowedHeaders.map((header) => (
-        <CheckboxWrapper
-          padding={2}
-          width="100%"
-          key={header.name}
-          isActive={isSelected(header.name)}
-        >
-          <Checkbox
-            onChange={() => handleChange(header.name)}
-            value={isSelected(header.name) && header.name}
+    <>
+      <Flex width="100%" justifyContent="space-between">
+        <Typography variant="pi" fontWeight="bold">
+          {formatMessage({
+            id: 'containers.ListPage.displayedFields',
+            defaultMessage: 'Displayed fields',
+          })}
+        </Typography>
+        <TextButton onClick={handleReset}>
+          {formatMessage({
+            id: 'app.components.Button.reset',
+            defaultMessage: 'Reset',
+          })}
+        </TextButton>
+      </Flex>
+      <Flex width="100%" direction="column" alignItems="start">
+        {allAllowedHeaders.map((header) => (
+          <CheckboxWrapper
+            padding={2}
+            width="100%"
+            key={header.name}
+            isActive={isSelected(header.name)}
           >
-            {formatMessage({
-              id: header.intlLabel.id || header.name,
-              defaultMessage: header.intlLabel.defaultMessage || header.name,
-            })}
-          </Checkbox>
-        </CheckboxWrapper>
-      ))}
-    </Flex>
+            <Checkbox
+              onChange={() => handleChange(header.name)}
+              // assign the selected header name
+              value={isSelected(header.name) && header.name}
+              name={header.name}
+            >
+              {formatMessage({
+                id: header.intlLabel.id || header.name,
+                defaultMessage: header.intlLabel.defaultMessage || header.name,
+              })}
+            </Checkbox>
+          </CheckboxWrapper>
+        ))}
+      </Flex>
+    </>
   );
 };
 

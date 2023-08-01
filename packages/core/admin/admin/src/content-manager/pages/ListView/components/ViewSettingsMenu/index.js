@@ -1,30 +1,23 @@
 import React from 'react';
 
-import { Flex, IconButton, Popover, TextButton, Typography } from '@strapi/design-system';
+import { Flex, IconButton, Popover } from '@strapi/design-system';
 import { CheckPermissions, LinkButton } from '@strapi/helper-plugin';
 import { Cog, Layer } from '@strapi/icons';
 import PropTypes from 'prop-types';
 import { useIntl } from 'react-intl';
-import { useSelector, useDispatch } from 'react-redux';
+import { useSelector } from 'react-redux';
 
 import { selectAdminPermissions } from '../../../../../pages/App/selectors';
-import { getTrad } from '../../../../utils';
-import { onResetListHeaders } from '../../actions';
 import { FieldPicker } from '../FieldPicker';
 
-export const CogMenu = ({ slug, layout }) => {
+export const ViewSettingsMenu = ({ slug, layout }) => {
   const [isVisible, setIsVisible] = React.useState(false);
   const cogButtonRef = React.useRef();
   const permissions = useSelector(selectAdminPermissions);
   const { formatMessage } = useIntl();
-  const dispatch = useDispatch();
 
   const handleToggle = () => {
     setIsVisible((prev) => !prev);
-  };
-
-  const handleReset = () => {
-    dispatch(onResetListHeaders());
   };
 
   return (
@@ -32,8 +25,8 @@ export const CogMenu = ({ slug, layout }) => {
       <IconButton
         icon={<Cog />}
         label={formatMessage({
-          id: 'app.links.configure-view',
-          defaultMessage: 'Configure the view',
+          id: 'components.ViewSettings.tooltip',
+          defaultMessage: 'View Settings',
         })}
         ref={cogButtonRef}
         onClick={handleToggle}
@@ -62,20 +55,6 @@ export const CogMenu = ({ slug, layout }) => {
                   defaultMessage: 'Configure the view',
                 })}
               </LinkButton>
-              <Flex width="100%" justifyContent="space-between">
-                <Typography variant="pi" fontWeight="bold">
-                  {formatMessage({
-                    id: getTrad('containers.ListPage.displayedFields'),
-                    defaultMessage: 'Displayed fields',
-                  })}
-                </Typography>
-                <TextButton onClick={handleReset}>
-                  {formatMessage({
-                    id: 'app.components.Button.reset',
-                    defaultMessage: 'Reset',
-                  })}
-                </TextButton>
-              </Flex>
             </CheckPermissions>
             <FieldPicker layout={layout} />
           </Flex>
@@ -85,7 +64,7 @@ export const CogMenu = ({ slug, layout }) => {
   );
 };
 
-CogMenu.propTypes = {
+ViewSettingsMenu.propTypes = {
   slug: PropTypes.string.isRequired,
   layout: PropTypes.shape({
     contentType: PropTypes.shape({
